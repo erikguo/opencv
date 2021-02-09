@@ -222,6 +222,10 @@ namespace cv {
                     cv::dnn::LayerParams activation_param;
                     if (type == "relu")
                     {
+                        activation_param.type = "ReLU";
+                    }
+                    else if (type == "leaky")
+                    {
                         activation_param.set<float>("negative_slope", 0.1f);
                         activation_param.type = "ReLU";
                     }
@@ -462,7 +466,7 @@ namespace cv {
                     fused_layer_names.push_back(last_layer);
                 }
 
-                void setYolo(int classes, const std::vector<int>& mask, const std::vector<float>& anchors, float thresh, float nms_threshold, float scale_x_y)
+                void setYolo(int classes, const std::vector<int>& mask, const std::vector<float>& anchors, float thresh, float nms_threshold, float scale_x_y, int new_coords)
                 {
                     cv::dnn::LayerParams region_param;
                     region_param.name = "Region-name";
@@ -476,6 +480,7 @@ namespace cv {
                     region_param.set<float>("thresh", thresh);
                     region_param.set<float>("nms_threshold", nms_threshold);
                     region_param.set<float>("scale_x_y", scale_x_y);
+                    region_param.set<int>("new_coords", new_coords);
 
                     std::vector<float> usedAnchors(numAnchors * 2);
                     for (int i = 0; i < numAnchors; ++i)
@@ -843,6 +848,7 @@ namespace cv {
                         float thresh = getParam<float>(layer_params, "thresh", 0.2);
                         float nms_threshold = getParam<float>(layer_params, "nms_threshold", 0.0);
                         float scale_x_y = getParam<float>(layer_params, "scale_x_y", 1.0);
+                        int new_coords = getParam<int>(layer_params, "new_coords", 0);
 
                         std::string anchors_values = getParam<std::string>(layer_params, "anchors", std::string());
                         CV_Assert(!anchors_values.empty());
@@ -855,31 +861,15 @@ namespace cv {
                         CV_Assert(classes > 0 && num_of_anchors > 0 && (num_of_anchors * 2) == anchors_vec.size());
 
                         setParams.setPermute(false);
-                        setParams.setYolo(classes, mask_vec, anchors_vec, thresh, nms_threshold, scale_x_y);
+                        setParams.setYolo(classes, mask_vec, anchors_vec, thresh, nms_threshold, scale_x_y, new_coords);
                     }
                     else {
                         CV_Error(cv::Error::StsParseError, "Unknown layer type: " + layer_type);
                     }
 
                     std::string activation = getParam<std::string>(layer_params, "activation", "linear");
-                    if (activation == "leaky")
-                    {
-                        setParams.setActivation("relu");
-                    }
-                    else if (activation == "swish")
-                    {
-                        setParams.setActivation("swish");
-                    }
-                    else if (activation == "mish")
-                    {
-                        setParams.setActivation("mish");
-                    }
-                    else if (activation == "logistic")
-                    {
-                        setParams.setActivation("logistic");
-                    }
-                    else if (activation != "linear")
-                        CV_Error(cv::Error::StsParseError, "Unsupported activation: " + activation);
+                    if (activation != "linear")
+                        setParams.setActivation(activation);
 
                     net->out_channels_vec[layers_counter] = tensor_shape[0];
                 }
@@ -996,7 +986,7 @@ namespace cv {
                     }
 
                     std::string activation = getParam<std::string>(layer_params, "activation", "linear");
-                    if(activation == "leaky" || activation == "swish" || activation == "mish" || activation == "logistic")
+                    if (activation != "linear")
                         ++cv_layers_counter;  // For ReLU, Swish, Mish, Sigmoid
 
                     if(!darknet_layers_counter)

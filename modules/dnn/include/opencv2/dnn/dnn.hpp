@@ -1253,6 +1253,9 @@ CV__DNN_INLINE_NS_BEGIN
       */
      class CV_EXPORTS_W_SIMPLE DetectionModel : public Model
      {
+	 private:
+	     bool nmsAcrossClasses = false;
+
      public:
          /**
           * @brief Create detection model from network represented in one of the supported formats.
@@ -1267,6 +1270,21 @@ CV__DNN_INLINE_NS_BEGIN
           * @param[in] network Net object.
           */
          CV_WRAP DetectionModel(const Net& network);
+		 
+        /**
+         * @brief nmsAcrossClasses defaults to false,
+         * such that when non max suppression is used during the detect() function, it will do so per-class.
+         * This function allows you to toggle this behaviour.
+         * @param[in] value The new value for nmsAcrossClasses
+         */
+        CV_WRAP void setNmsAcrossClasses(bool value);
+
+        /**
+         * @brief Getter for nmsAcrossClasses. This variable defaults to false,
+         * such that when non max suppression is used during the detect() function, it will do so only per-class
+         */
+        CV_WRAP bool getNmsAcrossClasses();
+		 
 
          /** @brief Given the @p input frame, create input blob, run net and return result detections.
           *  @param[in]  frame  The input image.
