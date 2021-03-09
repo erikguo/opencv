@@ -137,6 +137,37 @@ void ClassificationModel::classify(InputArray frame, int& classId, float& conf)
     std::tie(classId, conf) = classify(frame);
 }
 
+void ClassificationModel::classify_topk(InputArray frame, int topk, CV_OUT std::vector<int>& classIds, CV_OUT std::vector<float>& confs);
+{
+    std::vector<Mat> outs;
+    impl->predict(*this, frame.getMat(), outs);
+    CV_Assert(outs.size() == 1);
+    confs.clear();
+    classIds.clear();
+
+    if (topk == 1) {
+        double conf;
+        cv::Point maxLoc;
+        minMaxLoc(outs[0].reshape(1, 1), nullptr, &conf, nullptr, &maxLoc);
+        classIds.push_back(maxLoc.x);
+        confs.push_back(conf);
+    }
+    else {
+        // 首先需要给结果集排序，然后取出top-k的识别结果
+        cv::Mat_<int> sortIdxArr;
+        cv::Mat sortArr(outs[0].reshape(1, 1));
+        cv::sortIdx(sortArr, sortIdxArr, CV_SORT_EVERY_ROW  +  CV_SORT_DESCENDING);
+        length = sortArr.cols;
+        if (topk > length) {
+            topk = length
+        }
+        for (int i = 0; i < topk; i++) {
+            classIds.push_back(sortIdxArr(0, i))
+            confs.push_back(sortArr(0, sortIdxArr(0, i)))
+        }
+    }
+}
+
 KeypointsModel::KeypointsModel(const String& model, const String& config)
     : Model(model, config) {};
 

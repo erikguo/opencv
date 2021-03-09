@@ -1180,6 +1180,9 @@ CV__DNN_INLINE_NS_BEGIN
 
          /** @overload */
          CV_WRAP void classify(InputArray frame, CV_OUT int& classId, CV_OUT float& conf);
+
+         /** @overload */
+         CV_WRAP void classify_topk(InputArray frame, int topk, CV_OUT std::vector<int>& classIds, CV_OUT std::vector<float>& confs);
      };
 
      /** @brief This class represents high-level API for keypoints models
@@ -1270,7 +1273,7 @@ CV__DNN_INLINE_NS_BEGIN
           * @param[in] network Net object.
           */
          CV_WRAP DetectionModel(const Net& network);
-		 
+
         /**
          * @brief nmsAcrossClasses defaults to false,
          * such that when non max suppression is used during the detect() function, it will do so per-class.
@@ -1284,7 +1287,7 @@ CV__DNN_INLINE_NS_BEGIN
          * such that when non max suppression is used during the detect() function, it will do so only per-class
          */
         CV_WRAP bool getNmsAcrossClasses();
-		 
+
 
          /** @brief Given the @p input frame, create input blob, run net and return result detections.
           *  @param[in]  frame  The input image.
